@@ -1,80 +1,55 @@
-## Predicati Principali
+# Prolog JSON Parser
 
-### jsonparse/2
+Custom, dependency-free JSON parser and serializer developed in SWI-Prolog.
 
-Il predicato `jsonparse/2` è il punto di ingresso principale per il parsing di un input JSON, una stringa o una rappresentazione atomica di JSON, in un termine Prolog che rappresenta la struttura dati JSON.
+This project explores the application of logic programming paradigms to data parsing and serialization. By leveraging Prolog's powerful term unification, the univ operator (`=..`), and recursive clause resolution, it transforms flat JSON strings into structured, traversable Prolog terms without relying on external libraries.
 
-- **Argomenti:**
-  - `Input`: la stringa o l'atomo JSON da parsare.
-  - `Output`: il termine Prolog che rappresenta la struttura dati JSON parsata.
+## Key Features
 
-Innanzitutto, il predicato controlla se l'input è una stringa o un atomo e lo converte in una rappresentazione di termini del JSON. Utilizza quindi `jsonobj/2` e `jsonarray/2` per analizzare rispettivamente gli oggetti e gli array JSON nell'input.
+- **Logical Parsing:** Converts JSON objects (`{...}`) and arrays (`[...]`) into compound Prolog terms (`jsonobj/1` and `jsonarray/1`).
+- **Data Access:** Query nested JSON structures dynamically using field names or array indices via logical backtracking.
+- **File I/O:** Built-in predicates to read JSON from files directly into memory or serialize Prolog terms back into formatted JSON files.
+- **Pure Logic Implementation:** Utilizes pattern matching and recursion instead of imperative control flows.
 
-### jsonobj/2
+## Core Predicates
 
-Il predicato `jsonobj/2` viene usato per parsare oggetti JSON.
+The implementation is driven by a set of highly recursive predicates that evaluate and construct the JSON AST.
 
-- **Argomenti:**
-  - `Input`: l'oggetto JSON di input.
-  - `Output`: il termine Prolog che rappresenta l'oggetto JSON parsato.
+### Ingestion & Serialization
+- `jsonparse/2`: The primary entry point. It accepts a JSON string (or atom) and parses it. It first maps the string to standard Prolog terms using `term_string/2` and then recursively transforms those terms into the custom `jsonobj/1` and `jsonarray/1` structures.
+- `jsonread/2`: Opens a file, reads its contents into a string, and evaluates it using `jsonparse/2`.
+- `jsondump/2`: The serializer. It takes a parsed `jsonobj` or `jsonarray`, recursively converts the AST back into character codes (using predicates like `encloseinparens/3` and `elements/3`), and writes the resulting JSON string to a file.
 
-Utilizza il predicato `member/2` per analizzare le coppie chiave-valore dell'oggetto, dove `member/2` prende una singola coppia chiave-valore e la restituisce come tupla della chiave e del valore parsato.
+### Data Access
+- `jsonaccess/3`: A flexible querying predicate. You can pass a parsed JSON structure and a list of fields (keys for objects, indices for arrays). Through unification and recursive traversal (`accessvalue/3` and `nth0/3`), it resolves and unifies the `Result` variable with the requested nested value.
 
-### jsonarray/2
+### Internal Logic
+- `jsonobj/2` & `jsonarray/2`: These predicates handle the recursive decomposition of Prolog term structures. They utilize the univ operator (`=..`) to unpack terms (like `,` for lists of members or `:` for key-value pairs) and recursively parse inner values.
+- `member/2`: Identifies and extracts key-value pairs (separated by `:`) ensuring keys are strings and deferring value parsing based on their type.
 
-Il predicato `jsonarray/2` viene usato per parsare array JSON.
+## Getting Started
 
-- **Argomenti:**
-  - `Input`: l'array JSON di input.
-  - `Output`: il termine Prolog che rappresenta l'array JSON parsato.
+### Prerequisites
+You need a Prolog environment installed, such as [SWI-Prolog](https://www.swi-prolog.org/).
 
-Itera attraverso gli elementi dell'array e usa `jsonparse/2` per analizzare ogni elemento in modo ricorsivo.
+### Running the Parser
 
-### jsonaccess/3
+1. Clone the repository and navigate to the directory:
+   ```bash
+   git clone <your-repository-url>
+   cd prolog-json-parser
+   ```
 
-Il predicato `jsonaccess/3` viene utilizzato per accedere ai valori nella struttura dati JSON analizzata.
+2. Launch the SWI-Prolog interpreter with the source file:
+   ```bash
+   swipl -s jsonparse.pl
+   ```
 
-- **Argomenti:**
-  - `ParsedJSON`: la struttura dati JSON parsata.
-  - `Fields`: una lista di campi.
-  - `Result`: il risultato trovato.
-
-Utilizza il predicato `accessvalue/3` per accedere al valore di un campo in un oggetto JSON e il predicato `nth0/3` per accedere a un elemento in un determinato indice in un array JSON.
-
-### jsonread/2
-
-Il predicato `jsonread/2` viene utilizzato per leggere dati JSON da un file.
-
-- **Argomenti:**
-  - `Filename`: il nome del file.
-  - `ParsedJSON`: il JSON parsato.
-
-Apre il file, legge l'input JSON da esso, utilizza `jsonparse/2` per parsarlo e quindi chiude il file.
-
-### jsondump/2
-
-Il predicato `jsondump/2` viene utilizzato per scrivere dati JSON su un file.
-
-- **Argomenti:**
-  - `ParsedJSON`: la struttura dei dati JSON parsata.
-  - `Filename`: il nome del file.
-
-Utilizza `encloseinparens/3` per racchiudere il JSON tra parentesi graffe per gli oggetti e parentesi quadre per gli array e scrive la stringa risultante in un file.
-
-### encloseinparens/3
-
-Il predicato `encloseinparens/3` viene utilizzato per formattare i dati JSON parsati.
-
-- **Argomenti:**
-  - `Type`: il tipo di parentesi (`{}` per gli oggetti, `[]` per gli array).
-  - `Elements`: gli elementi da racchiudere.
-  - `Result`: la stringa risultante formattata.
-
-### elements/3
-
-Il predicato `elements/3` viene utilizzato per formattare gli elementi dell'array JSON da scrivere su file.
-
-- **Argomenti:**
-  - `Elements`: la lista degli elementi.
-  - `Accumulator`: l'accumulatore per i risultati intermedi.
-  - `Result`: la lista degli elementi formattata.
+3. Query the parser directly in the REPL:
+   ```prolog
+   ?- jsonparse("{\"name\": \"John\", \"age\": 30}", Parsed).
+   ```
+   *Expected Output:*
+   ```prolog
+   Parsed = jsonobj([("name", "John"), ("age", 30)]).
+   ```
